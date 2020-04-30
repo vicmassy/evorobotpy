@@ -168,7 +168,7 @@ class HopperBulletEnv(WalkerBaseBulletEnv):
       potential_up_old = self.potential_up
       self.potential_up = state[0]/self.scene.dt
       progress_up = float(abs(self.potential_up-potential_up_old))
-      reward = 2.0*progress_up-0.5*abs(progress)
+      reward = 2.0*progress_up-1.0*abs(progress)
 
 
     feet_collision_cost = 0.0
