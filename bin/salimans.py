@@ -91,6 +91,13 @@ class Salimans(EvoAlgo):
             self.policy.nn.seed(self.policy.get_seed + cgen)
             # Evaluate offspring
             for b in range(batchSize):
+                rand = np.random.uniform(0, 1)
+                if rand < 0.5:
+                    self.env.robot.behavior1 = 5.0
+                    self.env.robot.behavior2 = 0.0
+                else:
+                    self.env.robot.behavior1 = 0.0
+                    self.env.robot.behavior2 = 5.0
                 for bb in range(2):
                     if (bb == 0):
                         candidate = center + samples[b,:] * self.noiseStdDev
