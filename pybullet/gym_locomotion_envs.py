@@ -28,10 +28,16 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
     if (self.stateId >= 0):
       #print("restoreState self.stateId:",self.stateId)
       self._p.restoreState(self.stateId)
-    '''if self.robot.behavior1 == 5.0 and self.robot.behavior2 == 0.0:
-      print("MOVE FORDWARD")
-    elif self.robot.behavior1 == 0.0 and self.robot.behavior2 == 5.0:
-      print("JUMP VERTICAL")'''
+    # Comment out for testing
+    rand = np.random.uniform(0, 1)
+    if rand < 0.5:
+        self.robot.behavior1 = 5.0
+        self.robot.behavior2 = 0.0
+        print("MOVE FORDWARD")
+    else:
+        self.robot.behavior1 = 0.0
+        self.robot.behavior2 = 5.0
+        print("JUMP VERTICAL")
     r = MJCFBaseBulletEnv.reset(self)
     self._p.configureDebugVisualizer(pybullet.COV_ENABLE_RENDERING, 0)
 
