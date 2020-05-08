@@ -464,33 +464,43 @@ void Evonet::updateNet()
             // update block
             if (*nbl == 1)
             {
-                for(t = *(nbl + 1), a = (neurona + *(nbl + 1)), ni = (m_netinput + *(nbl + 1)), nt = (m_neurontype + *(nbl + 1)); t < (*(nbl + 1) + *(nbl + 2)); t++, a++, ni++, nt++)
-                {
-                    switch (*nt)
+                if (*(nbl+1) == m_ninputs) {
+                    int half = (m_ninputs+m_nhiddens)*0.5;
+                    for(t = *(nbl + 1), a = (neurona + *(nbl + 1)), ni = (m_netinput + *(nbl + 1)); t < half; t++, a++, ni++)
                     {
-                        case 0:
-                            // input neurons are simple rely units
-                            *a = *(cobserv + t);
-                            break;
-                        case 1:
-                            // Logistic
-                            *a = logistic(*ni);
-                            break;
-                        case 2:
-                            // Tanh
-                            *a = tanh(*ni);
-                            break;
-                        case 3:
-                            // linear
-                            *a = linear(*ni);
-                            break;
-                        case 4:
-                            // Binary
-                            if (*ni >= 0.5)
-                                *a = 1.0;
-                            else
-                                *a = -1.0;
-                            break;
+                        *a = tanh(*ni)*logistic(*(ni+half));
+                        *(a+half) = 0.0;
+                    }
+                }
+                else {
+                    for(t = *(nbl + 1), a = (neurona + *(nbl + 1)), ni = (m_netinput + *(nbl + 1)), nt = (m_neurontype + *(nbl + 1)); t < (*(nbl + 1) + *(nbl + 2)); t++, a++, ni++, nt++)
+                    {
+                        switch (*nt)
+                        {
+                            case 0:
+                                // input neurons are simple rely units
+                                *a = *(cobserv + t);
+                                break;
+                            case 1:
+                                // Logistic
+                                *a = logistic(*ni);
+                                break;
+                            case 2:
+                                // Tanh
+                                *a = tanh(*ni);
+                                break;
+                            case 3:
+                                // linear
+                                *a = linear(*ni);
+                                break;
+                            case 4:
+                                // Binary
+                                if (*ni >= 0.5)
+                                    *a = 1.0;
+                                else
+                                    *a = -1.0;
+                                break;
+                        }
                     }
                 }
             }
