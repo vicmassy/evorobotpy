@@ -56,6 +56,7 @@ class WalkerBase(MJCFBasedRobot):
     if self.initial_z == None:
       self.initial_z = z
     r, p, yaw = self.body_rpy
+    self.yaw = yaw
     self.walk_target_theta = np.arctan2(self.walk_target_y - self.body_xyz[1],
                                         self.walk_target_x - self.body_xyz[0])
     self.walk_target_dist = np.linalg.norm(
@@ -158,7 +159,9 @@ class Ant(WalkerBase):
   foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
 
   def __init__(self):
-    WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, obs_dim=28, power=2.5)
+    self.behavior1 = None
+    self.behavior2 = None
+    WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, obs_dim=30, power=2.5)
 
   def alive_bonus(self, z, pitch):
     return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground

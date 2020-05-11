@@ -309,6 +309,8 @@ class AntBulletEnv(WalkerBaseBulletEnv):
       self.robot.apply_action(a)
       self.scene.global_step()
 
+    oldpos0 = self.robot.body_xyz[0] 
+    oldpos1 = self.robot.body_xyz[1] 
     state = self.robot.calc_state()  # also calculates self.joints_at_limit
 
     self._alive = float(
@@ -320,9 +322,14 @@ class AntBulletEnv(WalkerBaseBulletEnv):
       print("~INF~", state)
       done = True
 
-    potential_old = self.potential
-    self.potential = self.robot.calc_potential()
-    progress = float(self.potential - potential_old)
+    # potential_old = self.potential
+    # self.potential = self.robot.calc_potential()
+    # progress = float(self.potential - potential_old)
+
+    xy_mov_angle = np.arctan2(self.robot.body_xyz[1] - oldpos1, self.robot.body_xyz[0] - oldpos0)
+    self_mov_angle = xy_mov_angle - self.robot.yaw
+    step_length = np.sqrt((self.robot.body_xyz[0] - oldpos0)**2 + (self.robot.body_xyz[1] - oldpos1)**2) / self.robot.scene.dt
+    progress = step_length * np.cos(self_mov_angle)  # this line remove for walking forward, use self_mov_angle-(np.pi/4) and self_mov_angle+(np.pi/4) to reward for walking 45 degree left or right
 
     feet_collision_cost = 0.0
     for i, f in enumerate(
