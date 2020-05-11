@@ -331,7 +331,7 @@ class AntBulletEnv(WalkerBaseBulletEnv):
     step_length = np.sqrt((self.robot.body_xyz[0] - oldpos0)**2 + (self.robot.body_xyz[1] - oldpos1)**2) / self.robot.scene.dt
     # this line remove for walking forward, use self_mov_angle-(np.pi/4) and self_mov_angle+(np.pi/4) 
     # to reward for walking 45 degree left or right
-    if self.behavior1 == 5.0 and behavior2 == 0.0:
+    if self.robot.behavior1 == 5.0 and self.robot.behavior2 == 0.0:
       progress = step_length * np.cos(self_mov_angle-(np.pi/4))
     else:
       progress = step_length * np.cos(self_mov_angle+(np.pi/4))
