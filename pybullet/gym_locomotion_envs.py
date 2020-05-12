@@ -33,11 +33,11 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
     if rand < 0.5:
         self.robot.behavior1 = 5.0
         self.robot.behavior2 = 0.0
-        print("MOVE FORDWARD")
+        print("BEHAVIOR 1")
     else:
         self.robot.behavior1 = 0.0
         self.robot.behavior2 = 5.0
-        print("JUMP VERTICAL")'''
+        print("BEHAVIOR 2")'''
     r = MJCFBaseBulletEnv.reset(self)
     self._p.configureDebugVisualizer(pybullet.COV_ENABLE_RENDERING, 0)
 
@@ -331,6 +331,7 @@ class AntBulletEnv(WalkerBaseBulletEnv):
     step_length = np.sqrt((self.robot.body_xyz[0] - oldpos0)**2 + (self.robot.body_xyz[1] - oldpos1)**2) / self.robot.scene.dt
     # this line remove for walking forward, use self_mov_angle-(np.pi/4) and self_mov_angle+(np.pi/4) 
     # to reward for walking 45 degree left or right
+    progress = 0.0
     if self.robot.behavior1 == 5.0 and self.robot.behavior2 == 0.0:
       progress = step_length * np.cos(self_mov_angle-(np.pi/4))
     else:
