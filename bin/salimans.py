@@ -159,7 +159,7 @@ class Salimans(EvoAlgo):
                 self.env.seed(self.policy.get_seed + 100000)
                 self.policy.nn.seed(self.policy.get_seed + 100000)
                 self.policy.set_trainable_flat(candidate) 
-                eval_rews, eval_length = self.policy.rollout(self.policy.nttrials, timestep_limit=1000)
+                eval_rews, eval_length = self.policy.rollout(self.policy.nttrials, timestep_limit=1000, post_eval=True)
                 gfit = eval_rews
                 ceval += eval_length
                 # eveltually store the new best generalization individual

@@ -54,7 +54,7 @@ if len(sys.argv) == 1:
     if (statsumn == 0):
         print("\033[1mERROR: No stat*.npy file found\033[0m") 
     else:
-        plt.legend()
+        plt.legend(loc=0)
         plt.show()
 
     

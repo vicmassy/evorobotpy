@@ -86,7 +86,7 @@ class Policy(object):
             self.nn.resetNormalizationVectors()
 
     # virtual function, implemented in sub-classes
-    def rollout(self, render=False, timestep_limit=None, seed=None):
+    def rollout(self, render=False, timestep_limit=None, seed=None, post_eval=False):
                 raise NotImplementedError
 
     def set_trainable_flat(self, x):
@@ -171,7 +171,7 @@ class BulletPolicy(Policy):
         Policy.__init__(self, env, ninputs, noutputs, low, high, ob, ac, filename, seed, nrobots, heterogeneous, test)                            
     
     # === Rollouts/training ===
-    def rollout(self, ntrials, render=False, timestep_limit=None, seed=None):
+    def rollout(self, ntrials, render=False, timestep_limit=None, seed=None, post_eval=False):
         rews = 0.0
         steps = 0
         # initialize the render for showing the activation of the neurons
@@ -193,12 +193,13 @@ class BulletPolicy(Policy):
                 else:
                     normphase = 0
             # Reset environment
-            '''if trial%2 == 0:
-                self.env.robot.behavior1 = 5.0
-                self.env.robot.behavior2 = 0.0
-            else:
-                self.env.robot.behavior1 = 0.0
-                self.env.robot.behavior2 = 5.0'''
+            if post_eval:
+                if trial%2 == 0:
+                    self.env.robot.behavior1 = 5.0
+                    self.env.robot.behavior2 = 0.0
+                else:
+                    self.env.robot.behavior1 = 0.0
+                    self.env.robot.behavior2 = 5.0
             self.ob = self.env.reset()
             # Reset network
             self.nn.resetNet()
@@ -247,7 +248,7 @@ class GymPolicy(Policy):
         Policy.__init__(self, env, ninputs, noutputs, low, high, ob, ac, filename, seed, nrobots, heterogeneous, test)
     
     # === Rollouts/training ===
-    def rollout(self, ntrials, render=False, timestep_limit=None, seed=None):
+    def rollout(self, ntrials, render=False, timestep_limit=None, seed=None, post_eval=False):
         rews = 0.0
         steps = 0
         # initialize the render for showing the activation of the neurons
@@ -317,7 +318,7 @@ class GymPolicyDiscr(Policy):
         Policy.__init__(self, env, ninputs, noutputs, low, high, ob, ac, filename, seed, nrobots, heterogeneous, test)
     
     # === Rollouts/training ===
-    def rollout(self, ntrials, render=False, timestep_limit=None, seed=None):
+    def rollout(self, ntrials, render=False, timestep_limit=None, seed=None, post_eval=False):
         rews = 0.0
         steps = 0
         # initialize the render for showing the activation of the neurons
@@ -388,7 +389,7 @@ class ErPolicy(Policy):
         self.done = done
             
     # === Rollouts/training ===
-    def rollout(self, ntrials, render=False, timestep_limit=None, seed=None):
+    def rollout(self, ntrials, render=False, timestep_limit=None, seed=None, post_eval=False):
         rews = 0.0
         steps = 0
         # To ensure replicability (we always pass a valid seed, even if fully-random evaluation is going to be run)
