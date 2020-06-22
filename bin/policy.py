@@ -173,8 +173,8 @@ class BulletPolicy(Policy):
     # === Rollouts/training ===
     def rollout(self, ntrials, render=False, timestep_limit=None, seed=None, post_eval=False):
         rews = 0.0
-        if not post_eval:
-            rews = 10000
+        '''if not post_eval:
+            rews = 10000'''
         steps = 0
         # initialize the render for showing the activation of the neurons
         if (self.test == 2):
@@ -235,13 +235,14 @@ class BulletPolicy(Policy):
                 self.nn.normphase(0)
             # Update steps
             steps += t
-            if post_eval:
+            rews += rew
+            '''if post_eval:
                 rews += rew
             elif rew < rews:
-                rews = rew
+                rews = rew'''
         # Normalize reward by the number of trials
-        if post_eval:
-            rews /= ntrials
+        # if post_eval:
+        rews /= ntrials
 
         if (self.test > 0 and ntrials > 1):
             print("Average Fit %.2f Steps %.2f " % (rews, steps/float(ntrials)))
