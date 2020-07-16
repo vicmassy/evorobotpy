@@ -202,6 +202,14 @@ class BulletPolicy(Policy):
                 else:
                     self.env.robot.behavior1 = 0.0
                     self.env.robot.behavior2 = 5.0
+            else:
+                rand = np.random.uniform(0, 1)
+                if rand < 0.5:
+                    self.env.robot.behavior1 = 5.0
+                    self.env.robot.behavior2 = 0.0
+                else:
+                    self.env.robot.behavior1 = 0.0
+                    self.env.robot.behavior2 = 5.0
             self.ob = self.env.reset()
             # Reset network
             self.nn.resetNet()
