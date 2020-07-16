@@ -195,13 +195,13 @@ class BulletPolicy(Policy):
                 else:
                     normphase = 0
             # Reset environment
-            # if post_eval:
-            if trial%2 == 0:
-                self.env.robot.behavior1 = 5.0
-                self.env.robot.behavior2 = 0.0
-            else:
-                self.env.robot.behavior1 = 0.0
-                self.env.robot.behavior2 = 5.0
+            if post_eval:
+                if trial%2 == 0:
+                    self.env.robot.behavior1 = 5.0
+                    self.env.robot.behavior2 = 0.0
+                else:
+                    self.env.robot.behavior1 = 0.0
+                    self.env.robot.behavior2 = 5.0
             self.ob = self.env.reset()
             # Reset network
             self.nn.resetNet()

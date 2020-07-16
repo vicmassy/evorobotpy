@@ -29,15 +29,15 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
       #print("restoreState self.stateId:",self.stateId)
       self._p.restoreState(self.stateId)
     # Comment out for testing
-    '''rand = np.random.uniform(0, 1)
+    rand = np.random.uniform(0, 1)
     if rand < 0.5:
         self.robot.behavior1 = 5.0
         self.robot.behavior2 = 0.0
-        print("BEHAVIOR 1")
+        #print("BEHAVIOR 1")
     else:
         self.robot.behavior1 = 0.0
         self.robot.behavior2 = 5.0
-        print("BEHAVIOR 2")'''
+        #print("BEHAVIOR 2")
     r = MJCFBaseBulletEnv.reset(self)
     self._p.configureDebugVisualizer(pybullet.COV_ENABLE_RENDERING, 0)
 
