@@ -62,7 +62,7 @@ class SSS(EvoAlgo):
         for i in range(popsize):
             pop[i] = self.policy.get_trainable_flat()       
 
-        print("SSS: seed %d maxmsteps %d popSize %d noiseStdDev %lf nparams %d" % (self.seed, maxsteps / 1000000, popsize, self.noiseStdDev, nparams))
+        print("SSS: seed %d maxmsteps %d popSize %d noiseStdDev %lf crossoverrate %lf nparams %d" % (self.seed, maxsteps / 1000000, popsize, self.noiseStdDev, self.crossoverrate, nparams))
 
         # main loop
         elapsed = 0
@@ -97,11 +97,37 @@ class SSS(EvoAlgo):
             bgfit = eval_rews
             ceval += eval_length
             self.updateBestg(bgfit, pop[index[0]])            # eventually update the genotype/fitness of the best post-evaluated individual
-
-            # replace the worst hald of the population with a mutated copy of the first half of the population
+            
             halfpopsize = int(popsize/2)
             for i in range(halfpopsize):
-                pop[index[i+halfpopsize]] = pop[index[i]] + (rg.randn(1, nparams) * self.noiseStdDev)              
+                # crossover of the first parent and a randomly selected second parent among the best half population
+                if np.random.uniform(low=0.0, high=1.0) < self.crossoverrate:
+                    parent_1 = pop[index[i]]
+                    idx_p2 = np.random.choice(np.arange(0,halfpopsize, 1), size=2)
+                    if idx_p2[0] != i:
+                        parent_2 = pop[index[idx_p2[0]]]
+                    else:
+                        parent_2 = pop[index[idx_p2[1]]]
+                    cutting_points = np.random.choice(np.arange(0, nparams, 1), size=2)
+                    min_point = cutting_points.min()
+                    max_point = cutting_points.max()
+                    
+                    # The section A and C of the first parent with the section B of the second parent  
+                    if np.random.uniform(low=0.0, high=1.0) < 0.5:
+                        pop[index[i+halfpopsize], :min_point] = parent_1[:min_point]
+                        pop[index[i+halfpopsize], min_point:max_point] = parent_2[min_point:max_point]
+                        pop[index[i+halfpopsize], max_point:] = parent_1[max_point:]
+                    # The section A and C of the second parent with the section B of the first parent
+                    else:
+                        pop[index[i+halfpopsize], :min_point] = parent_2[:min_point]
+                        pop[index[i+halfpopsize], min_point:max_point] = parent_1[min_point:max_point]
+                        pop[index[i+halfpopsize], max_point:] = parent_2[max_point:]
+                        
+                    pop[index[i+halfpopsize]] += (rg.randn(nparams) * self.noiseStdDev)
+
+                # replace the worst half of the population with a mutated copy of the first half of the population
+                else:
+                    pop[index[i+halfpopsize]] = pop[index[i]] + (rg.randn(1, nparams) * self.noiseStdDev)
 
             # display info
             print('Seed %d (%.1f%%) gen %d msteps %d bestfit %.2f bestgfit %.2f cbestfit %.2f cbestgfit %.2f avgfit %.2f weightsize %.2f' %

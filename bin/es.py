@@ -62,6 +62,7 @@ def parseConfigFile(filename):
     global algoname
     global saveeachg
     global fromgeneration
+    global crossoverrate
 
     if os.path.isfile(filename):
 
@@ -113,6 +114,9 @@ def parseConfigFile(filename):
                 found = 1
             if o == "algo":
                 algoname = config.get("ADAPT","algo")
+                found = 1
+            if o == "crossoverrate":
+                crossoverrate = config.getfloat("ADAPT", "crossoverrate")
                 found = 1
               
             if found == 0:
@@ -345,7 +349,7 @@ def main(argv):
         from pepg import pepg
         algo = pepg(env, policy, cseed, filedir)
     # Set evolutionary variables
-    algo.setEvoVars(sampleSize, stepsize, noiseStdDev, sameenvcond, wdecay, evalCenter, saveeachg, fromgeneration)
+    algo.setEvoVars(sampleSize, stepsize, noiseStdDev, sameenvcond, wdecay, evalCenter, saveeachg, fromgeneration, crossoverrate)
 
     if (test > 0):
         # test a policy

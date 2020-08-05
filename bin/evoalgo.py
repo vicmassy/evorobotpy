@@ -62,7 +62,7 @@ class EvoAlgo(object):
         self.last_save_time = time.time()
 
     # Set evolutionary variables like batchSize, step size, etc.
-    def setEvoVars(self, sampleSize, stepsize, noiseStdDev, sameenvcond, wdecay, evalCenter, saveeachg, fromgeneration):
+    def setEvoVars(self, sampleSize, stepsize, noiseStdDev, sameenvcond, wdecay, evalCenter, saveeachg, fromgeneration, crossoverrate):
         self.batchSize = sampleSize
         self.stepsize = stepsize
         self.noiseStdDev = noiseStdDev
@@ -70,6 +70,7 @@ class EvoAlgo(object):
         self.wdecay = wdecay
         self.saveeachg = saveeachg
         self.fromgeneration = fromgeneration
+        self.crossoverrate = crossoverrate
 
     def run(self, nevals):
         # Run method depends on the algorithm
