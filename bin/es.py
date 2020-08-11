@@ -154,6 +154,7 @@ def helper():
     print("nrobots [integer]         : number of robots (default 1)")
     print("heterogeneous [integer]   : whether robots are heterogeneous (default 0)")
     print("algo [string]             : adaptive algorithm (default 'Salimans') CMAES, xNES, sNES, pepg, SSS, coevo2" )
+    print("crossoverrate [float]     : probability to perform crossover in the current offspring (default 0.8)" )
     print("[POLICY]")
     print("ntrials [integer]         : number of evaluation episodes (default 1)")
     print("nttrials [integer]        : number of post-evaluation episodes (default 0)")
@@ -170,6 +171,8 @@ def helper():
     print("action_noise_range        : action noise range (default 0.01)")   
     print("normalized [0/1]          : whether or not the input observations are normalized (default 1)")
     print("clip [0/1]                : whether we clip observation in [-5,5] (default 0)")
+    print("strategy [string]         : strategy to learn both behaviors (default 'symmetric') twoep, random" )
+    print("avgfitness [0/1]          : wheather to average the fitness of all episodes or return the worst episode fitness")
     print("")
     sys.exit()
 

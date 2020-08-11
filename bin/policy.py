@@ -45,10 +45,12 @@ class Policy(object):
         self.clip = 0        # clip observation
         self.displayneurons=0# Gym policies can display or the robot or the neurons activations
         self.wrange = 1.0    # weight range, used in uniform initialization only
+        self.strategy = 'symmetric' # strategy to learn both behaviors ('symmetric', 'twoep', 'random')
+        self.avgfitness = 1  # wheather to average the fitness of all trials or take the worst episode fitness 
         # Read configuration file
         self.readConfig(filename)
         # Display info
-        print("Evaluation: Episodes %d Test Episodes %d MaxSteps %d" % (self.ntrials, self.nttrials, self.maxsteps))
+        print("Evaluation: Strategy %s Episodes %d Test Episodes %d MaxSteps %d" % (self.strategy, self.ntrials, self.nttrials, self.maxsteps))
         # Initialize the neural network
         self.nn = net.PyEvonet(nrobots, heterogeneous, self.ninputs, (self.nhiddens * self.nlayers), self.noutputs, self.nlayers, self.nhiddens2, self.bias, self.architecture, self.afunction, self.out_type, self.winit, self.clip, self.normalize, self.action_noise, self.action_noise_range, self.wrange, self.nbins, low, high)
         # Initialize policy parameters
@@ -154,7 +156,13 @@ class Policy(object):
               found = 1
           if (o == "wrange"):
               self.wrange = config.getint("POLICY","wrange")
-              found = 1  
+              found = 1
+          if (o == "strategy"):
+              self.strategy = config.get("POLICY","strategy")
+              found = 1
+          if (o == "avgfitness"):
+              self.avgfitness = config.getint("POLICY", "avgfitness")
+              found = 1
           if (found == 0):
               print("\033[1mOption %s in section [POLICY] of %s file is unknown\033[0m" % (o, filename))
               sys.exit()
@@ -172,9 +180,10 @@ class BulletPolicy(Policy):
     
     # === Rollouts/training ===
     def rollout(self, ntrials, render=False, timestep_limit=None, seed=None, post_eval=False):
-        rews = 0.0
-        '''if not post_eval:
-            rews = 10000'''
+        if self.avgfitness or post_eval:
+            rews = 0.0
+        else:
+            rews = np.Infinity
         steps = 0
         # initialize the render for showing the activation of the neurons
         if (self.test == 2):
@@ -195,14 +204,14 @@ class BulletPolicy(Policy):
                 else:
                     normphase = 0
             # Reset environment
-            if post_eval:
+            if post_eval or self.strategy == 'twoep':
                 if trial%2 == 0:
                     self.env.robot.behavior1 = 5.0
                     self.env.robot.behavior2 = 0.0
                 else:
                     self.env.robot.behavior1 = 0.0
                     self.env.robot.behavior2 = 5.0
-            else:
+            elif self.strategy == 'random':
                 rand = np.random.uniform(0, 1)
                 if rand < 0.5:
                     self.env.robot.behavior1 = 5.0
@@ -243,14 +252,13 @@ class BulletPolicy(Policy):
                 self.nn.normphase(0)
             # Update steps
             steps += t
-            rews += rew
-            '''if post_eval:
+            if self.avgfitness or post_eval:
                 rews += rew
             elif rew < rews:
-                rews = rew'''
+                rews = rew
         # Normalize reward by the number of trials
-        # if post_eval:
-        rews /= ntrials
+        if self.avgfitness or post_eval:
+            rews /= ntrials
 
         if (self.test > 0 and ntrials > 1):
             print("Average Fit %.2f Steps %.2f " % (rews, steps/float(ntrials)))
