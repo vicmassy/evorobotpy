@@ -45,7 +45,7 @@ class Policy(object):
         self.clip = 0        # clip observation
         self.displayneurons=0# Gym policies can display or the robot or the neurons activations
         self.wrange = 1.0    # weight range, used in uniform initialization only
-        self.strategy = 'symmetric' # strategy to learn both behaviors ('symmetric', 'twoep', 'random')
+        self.strategy = 'random' # strategy to learn both behaviors ('symmetric', 'twoep', 'random')
         self.avgfitness = 1  # wheather to average the fitness of all trials or take the worst episode fitness 
         # Read configuration file
         self.readConfig(filename)
