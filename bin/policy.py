@@ -17,42 +17,49 @@ import numpy as np
 import configparser
 import time
 
+
 class Policy(object):
     def __init__(self, env, ninputs, noutputs, low, high, ob, ac, filename, seed, nrobots, heterogeneous, test):
         # Copy environment
         self.env = env
         self.seed = seed
         self.rs = np.random.RandomState(seed)
-        self.ninputs = ninputs 
+        self.ninputs = ninputs
         self.noutputs = noutputs
         self.test = test
         # Initialize parameters to default values
         self.ntrials = 1     # evaluation triala
         self.nttrials = 0    # post-evaluation trials
-        self.maxsteps = 1000 # max number of steps (used from ERPolicy only)
+        self.maxsteps = 1000  # max number of steps (used from ERPolicy only)
         self.nhiddens = 50   # number of hiddens
-        self.nhiddens2 = 0   # number of hiddens of the second layer 
-        self.nlayers = 1     # number of hidden layers 
+        self.nhiddens2 = 0   # number of hiddens of the second layer
+        self.nlayers = 1     # number of hidden layers
         self.bias = 0        # whether we have biases
-        self.out_type = 2    # output type (1=logistic,2=tanh,3=linear,4=binary)
-        self.architecture =0 # Feed-forward, recurrent, or full-recurrent network
+        # output type (1=logistic,2=tanh,3=linear,4=binary)
+        self.out_type = 2
+        self.architecture = 0  # Feed-forward, recurrent, or full-recurrent network
         self.afunction = 2   # activation function
         self.nbins = 1       # number of bins 1=no-beans
         self.winit = 0       # weight initialization: Xavier, normc, uniform
-        self.action_noise = 0# whether we apply noise to actions
-        self.action_noise_range = 0.01 # action noise range
+        self.action_noise = 0  # whether we apply noise to actions
+        self.action_noise_range = 0.01  # action noise range
         self.normalize = 0   # Do not normalize observations
         self.clip = 0        # clip observation
-        self.displayneurons=0# Gym policies can display or the robot or the neurons activations
+        # Gym policies can display or the robot or the neurons activations
+        self.displayneurons = 0
         self.wrange = 1.0    # weight range, used in uniform initialization only
-        self.strategy = 'random' # strategy to learn both behaviors ('symmetric', 'twoep', 'random')
-        self.avgfitness = 1  # wheather to average the fitness of all trials or take the worst episode fitness 
+        # strategy to learn both behaviors ('symmetric', 'twoep', 'random')
+        self.strategy = 'random'
+        # wheather to average the fitness of all trials or take the worst episode fitness
+        self.avgfitness = 1
         # Read configuration file
         self.readConfig(filename)
         # Display info
-        print("Evaluation: Strategy %s Episodes %d Test Episodes %d MaxSteps %d" % (self.strategy, self.ntrials, self.nttrials, self.maxsteps))
+        print("Evaluation: Strategy %s Episodes %d Test Episodes %d MaxSteps %d" % (
+            self.strategy, self.ntrials, self.nttrials, self.maxsteps))
         # Initialize the neural network
-        self.nn = net.PyEvonet(nrobots, heterogeneous, self.ninputs, (self.nhiddens * self.nlayers), self.noutputs, self.nlayers, self.nhiddens2, self.bias, self.architecture, self.afunction, self.out_type, self.winit, self.clip, self.normalize, self.action_noise, self.action_noise_range, self.wrange, self.nbins, low, high)
+        self.nn = net.PyEvonet(nrobots, heterogeneous, self.ninputs, (self.nhiddens * self.nlayers), self.noutputs, self.nlayers, self.nhiddens2, self.bias, self.architecture,
+                               self.afunction, self.out_type, self.winit, self.clip, self.normalize, self.action_noise, self.action_noise_range, self.wrange, self.nbins, low, high)
         # Initialize policy parameters
         self.nparams = self.nn.computeParameters()
         self.params = np.arange(self.nparams, dtype=np.float64)
@@ -63,9 +70,11 @@ class Policy(object):
             self.normvector = None
         # allocate neuron activation vector
         if (self.nbins == 1):
-            self.nact = np.arange((self.ninputs + (self.nhiddens * self.nlayers) + self.noutputs) * nrobots, dtype=np.float64)
+            self.nact = np.arange(
+                (self.ninputs + (self.nhiddens * self.nlayers) + self.noutputs) * nrobots, dtype=np.float64)
         else:
-            self.nact = np.arange((self.ninputs + (self.nhiddens * self.nlayers) + (self.noutputs * self.nbins)) * nrobots, dtype=np.float64)            
+            self.nact = np.arange((self.ninputs + (self.nhiddens * self.nlayers) + (
+                self.noutputs * self.nbins)) * nrobots, dtype=np.float64)
         # Allocate space for observation and action
         self.ob = ob
         self.ac = ac
@@ -80,7 +89,6 @@ class Policy(object):
         self.nn.seed(self.seed)
         self.nn.initWeights()
 
-
     def reset(self):
         self.nn.seed(self.seed)
         self.nn.initWeights()
@@ -89,7 +97,7 @@ class Policy(object):
 
     # virtual function, implemented in sub-classes
     def rollout(self, render=False, timestep_limit=None, seed=None, post_eval=False):
-                raise NotImplementedError
+        raise NotImplementedError
 
     def set_trainable_flat(self, x):
         self.params = np.copy(x)
@@ -98,74 +106,75 @@ class Policy(object):
     def get_trainable_flat(self):
         return self.params
 
-
     def readConfig(self, filename):
         # parse the [POLICY] section of the configuration file
         config = configparser.ConfigParser()
         config.read(filename)
         options = config.options("POLICY")
         for o in options:
-          found = 0
-          if (o == "ntrials"):
-              self.ntrials = config.getint("POLICY","ntrials")
-              found = 1
-          if (o == "nttrials"):
-              self.nttrials = config.getint("POLICY","nttrials")
-              found = 1
-          if (o == "maxsteps"):
-              self.maxsteps = config.getint("POLICY","maxsteps")
-              found = 1
-          if (o == "nhiddens"):
-              self.nhiddens = config.getint("POLICY","nhiddens")
-              found = 1
-          if (o == "nhiddens2"):
-              self.nhiddens2 = config.getint("POLICY","nhiddens2")
-              found = 1
-          if (o == "nlayers"):
-              self.nlayers = config.getint("POLICY","nlayers")
-              found = 1
-          if (o == "bias"):
-              self.bias = config.getint("POLICY","bias")
-              found = 1
-          if (o == "out_type"):
-              self.out_type = config.getint("POLICY","out_type")
-              found = 1
-          if (o == "nbins"):
-              self.nbins = config.getint("POLICY","nbins")
-              found = 1
-          if (o == "afunction"):
-              self.afunction = config.getint("POLICY","afunction")
-              found = 1
-          if (o == "architecture"):
-              self.architecture = config.getint("POLICY","architecture")
-              found = 1
-          if (o == "winit"):
-              self.winit = config.getint("POLICY","winit")
-              found = 1
-          if (o == "action_noise"):
-              self.action_noise = config.getint("POLICY","action_noise")
-              found = 1
-          if (o == "action_noise_range"):
-              self.action_noise_range = config.getfloat("POLICY","action_noise_range")
-              found = 1
-          if (o == "normalize"):
-              self.normalize = config.getint("POLICY","normalize")
-              found = 1
-          if (o == "clip"):
-              self.clip = config.getint("POLICY","clip")
-              found = 1
-          if (o == "wrange"):
-              self.wrange = config.getint("POLICY","wrange")
-              found = 1
-          if (o == "strategy"):
-              self.strategy = config.get("POLICY","strategy")
-              found = 1
-          if (o == "avgfitness"):
-              self.avgfitness = config.getint("POLICY", "avgfitness")
-              found = 1
-          if (found == 0):
-              print("\033[1mOption %s in section [POLICY] of %s file is unknown\033[0m" % (o, filename))
-              sys.exit()
+            found = 0
+            if (o == "ntrials"):
+                self.ntrials = config.getint("POLICY", "ntrials")
+                found = 1
+            if (o == "nttrials"):
+                self.nttrials = config.getint("POLICY", "nttrials")
+                found = 1
+            if (o == "maxsteps"):
+                self.maxsteps = config.getint("POLICY", "maxsteps")
+                found = 1
+            if (o == "nhiddens"):
+                self.nhiddens = config.getint("POLICY", "nhiddens")
+                found = 1
+            if (o == "nhiddens2"):
+                self.nhiddens2 = config.getint("POLICY", "nhiddens2")
+                found = 1
+            if (o == "nlayers"):
+                self.nlayers = config.getint("POLICY", "nlayers")
+                found = 1
+            if (o == "bias"):
+                self.bias = config.getint("POLICY", "bias")
+                found = 1
+            if (o == "out_type"):
+                self.out_type = config.getint("POLICY", "out_type")
+                found = 1
+            if (o == "nbins"):
+                self.nbins = config.getint("POLICY", "nbins")
+                found = 1
+            if (o == "afunction"):
+                self.afunction = config.getint("POLICY", "afunction")
+                found = 1
+            if (o == "architecture"):
+                self.architecture = config.getint("POLICY", "architecture")
+                found = 1
+            if (o == "winit"):
+                self.winit = config.getint("POLICY", "winit")
+                found = 1
+            if (o == "action_noise"):
+                self.action_noise = config.getint("POLICY", "action_noise")
+                found = 1
+            if (o == "action_noise_range"):
+                self.action_noise_range = config.getfloat(
+                    "POLICY", "action_noise_range")
+                found = 1
+            if (o == "normalize"):
+                self.normalize = config.getint("POLICY", "normalize")
+                found = 1
+            if (o == "clip"):
+                self.clip = config.getint("POLICY", "clip")
+                found = 1
+            if (o == "wrange"):
+                self.wrange = config.getint("POLICY", "wrange")
+                found = 1
+            if (o == "strategy"):
+                self.strategy = config.get("POLICY", "strategy")
+                found = 1
+            if (o == "avgfitness"):
+                self.avgfitness = config.getint("POLICY", "avgfitness")
+                found = 1
+            if (found == 0):
+                print("\033[1mOption %s in section [POLICY] of %s file is unknown\033[0m" % (
+                    o, filename))
+                sys.exit()
 
     @property
     def get_seed(self):
@@ -174,20 +183,25 @@ class Policy(object):
 # Bullet use float values for observation and action vectors
 # The policy communicate the pointer to the new vector each timestep since pyBullet create a new vector each time
 # Use renderWorld to show neurons
+
+
 class BulletPolicy(Policy):
     def __init__(self, env, ninputs, noutputs, low, high, ob, ac, filename, seed, nrobots, heterogeneous, test):
-        Policy.__init__(self, env, ninputs, noutputs, low, high, ob, ac, filename, seed, nrobots, heterogeneous, test)                            
-    
+        Policy.__init__(self, env, ninputs, noutputs, low, high,
+                        ob, ac, filename, seed, nrobots, heterogeneous, test)
+
     # === Rollouts/training ===
     def rollout(self, ntrials, render=False, timestep_limit=None, seed=None, post_eval=False):
         if self.avgfitness or post_eval:
             rews = 0.0
         else:
             rews = np.Infinity
+        rews1 = 0.0
+        rews2 = 0.0
         steps = 0
         # initialize the render for showing the activation of the neurons
         if (self.test == 2):
-            self.objs = np.arange(10, dtype=np.float64)   
+            self.objs = np.arange(10, dtype=np.float64)
             self.objs[0] = -1
             import renderWorld
         # To ensure replicability (we always pass a valid seed, even if fully-random evaluation is going to be run)
@@ -205,7 +219,7 @@ class BulletPolicy(Policy):
                     normphase = 0
             # Reset environment
             if post_eval or self.strategy == 'twoep':
-                if trial%2 == 0:
+                if trial % 2 == 0:
                     self.env.robot.behavior1 = 5.0
                     self.env.robot.behavior2 = 0.0
                 else:
@@ -226,6 +240,8 @@ class BulletPolicy(Policy):
             crew = 0.0
             # Reset episode-reward and step counter for current trial
             rew = 0
+            rew1 = 0
+            rew2 = 0
             t = 0
             while t < self.maxsteps:
                 # Copy the input in the network
@@ -233,16 +249,20 @@ class BulletPolicy(Policy):
                 # Activate network
                 self.nn.updateNet()
                 # Perform a step
-                self.ob, r, done, _ = self.env.step(self.ac)
+                self.ob, r, done, d = self.env.step(self.ac)
                 rew += r
+                rew1 += d["beh1"]
+                rew2 += d["beh2"]
                 t += 1
                 if (self.test > 0):
                     if (self.test == 1):
                         self.env.render(mode="human")
                         time.sleep(0.05)
                     if (self.test == 2):
-                        info = 'Trial %d Step %d Fit %.2f %.2f' % (trial, t, r, rew)
-                        renderWorld.update(self.objs, info, self.ob, self.ac, self.nact)
+                        info = 'Trial %d Step %d Fit %.2f %.2f' % (
+                            trial, t, r, rew)
+                        renderWorld.update(
+                            self.objs, info, self.ob, self.ac, self.nact)
                 if done:
                     break
             if (self.test > 0):
@@ -256,21 +276,27 @@ class BulletPolicy(Policy):
                 rews += rew
             elif rew < rews:
                 rews = rew
+            rews1 += rew1
+            rews2 += rew2
         # Normalize reward by the number of trials
         if self.avgfitness or post_eval:
             rews /= ntrials
 
         if (self.test > 0 and ntrials > 1):
-            print("Average Fit %.2f Steps %.2f " % (rews, steps/float(ntrials)))
-        return rews, steps
-    
+            print("Average Fit %.2f (%.2f %.2f) Steps %.2f " %
+                  (rews, rews1, rews2, steps/float(ntrials)))
+        return rews, steps, rews1, rews2
+
 # standard gym policy use double observation and action vectors and recreate the observation vector each step
 # consequently we convert the observation vector in double and we communicate the pointer to evonet each step
 # Use renderWorld to show neurons
+
+
 class GymPolicy(Policy):
     def __init__(self, env, ninputs, noutputs, low, high, ob, ac, filename, seed, nrobots, heterogeneous, test):
-        Policy.__init__(self, env, ninputs, noutputs, low, high, ob, ac, filename, seed, nrobots, heterogeneous, test)
-    
+        Policy.__init__(self, env, ninputs, noutputs, low, high,
+                        ob, ac, filename, seed, nrobots, heterogeneous, test)
+
     # === Rollouts/training ===
     def rollout(self, ntrials, render=False, timestep_limit=None, seed=None, post_eval=False):
         rews = 0.0
@@ -278,8 +304,8 @@ class GymPolicy(Policy):
         # initialize the render for showing the activation of the neurons
         if (self.test == 2):
             import renderWorld
-            self.objs = np.arange(10, dtype=np.float64)   
-            self.objs[0] = -1 
+            self.objs = np.arange(10, dtype=np.float64)
+            self.objs[0] = -1
         # To ensure replicability (we always pass a valid seed, even if fully-random evaluation is going to be run)
         if seed is not None:
             self.env.seed(seed)
@@ -315,8 +341,10 @@ class GymPolicy(Policy):
                         self.env.render()
                         time.sleep(0.05)
                     if (self.test == 2):
-                        info = 'Trial %d Step %d Fit %.2f %.2f' % (trial, t, r, rew)
-                        renderWorld.update(self.objs, info, self.ob, self.ac, self.nact)
+                        info = 'Trial %d Step %d Fit %.2f %.2f' % (
+                            trial, t, r, rew)
+                        renderWorld.update(
+                            self.objs, info, self.ob, self.ac, self.nact)
                 if done:
                     break
             if (self.test > 0):
@@ -330,17 +358,21 @@ class GymPolicy(Policy):
         # Normalize reward by the number of trials
         rews /= ntrials
         if (self.test > 0 and ntrials > 1):
-            print("Average Fit %.2f Steps %.2f " % (rews, steps/float(ntrials)))
+            print("Average Fit %.2f Steps %.2f " %
+                  (rews, steps/float(ntrials)))
         return rews, steps
 
 # standard gym policy use double observation and action vectors and recreate the observation vector each step
 # consequently we convert the observation vector in double and we communicate the pointer to evonet each step
 # in addition we convert the action vector into an integer since this policy is used for discrete output environment
 # Use renderWorld to show neurons
+
+
 class GymPolicyDiscr(Policy):
     def __init__(self, env, ninputs, noutputs, low, high, ob, ac, filename, seed, nrobots, heterogeneous, test):
-        Policy.__init__(self, env, ninputs, noutputs, low, high, ob, ac, filename, seed, nrobots, heterogeneous, test)
-    
+        Policy.__init__(self, env, ninputs, noutputs, low, high,
+                        ob, ac, filename, seed, nrobots, heterogeneous, test)
+
     # === Rollouts/training ===
     def rollout(self, ntrials, render=False, timestep_limit=None, seed=None, post_eval=False):
         rews = 0.0
@@ -348,8 +380,8 @@ class GymPolicyDiscr(Policy):
         # initialize the render for showing the activation of the neurons
         if (self.test == 2):
             import renderWorld
-            self.objs = np.arange(10, dtype=np.float64)   
-            self.objs[0] = -1 
+            self.objs = np.arange(10, dtype=np.float64)
+            self.objs[0] = -1
         # To ensure replicability (we always pass a valid seed, even if fully-random evaluation is going to be run)
         if seed is not None:
             self.env.seed(seed)
@@ -387,8 +419,10 @@ class GymPolicyDiscr(Policy):
                         self.env.render()
                         time.sleep(0.05)
                     if (self.test == 2):
-                        info = 'Trial %d Step %d Fit %.2f %.2f' % (trial, t, r, rew)
-                        renderWorld.update(self.objs, info, self.ob, self.ac, self.nact)
+                        info = 'Trial %d Step %d Fit %.2f %.2f' % (
+                            trial, t, r, rew)
+                        renderWorld.update(
+                            self.objs, info, self.ob, self.ac, self.nact)
                 if done:
                     break
             if (self.test > 0):
@@ -407,11 +441,14 @@ class GymPolicyDiscr(Policy):
 
 # Evorobotpy policies use float observation and action vectors and do not re-allocate the observation vectors
 # and use renderWorld to show robots and neurons
+
+
 class ErPolicy(Policy):
     def __init__(self, env, ninputs, noutputs, low, high, ob, ac, done, filename, seed, nrobots, heterogeneous, test):
-        Policy.__init__(self, env, ninputs, noutputs, low, high, ob, ac, filename, seed, nrobots, heterogeneous, test)
+        Policy.__init__(self, env, ninputs, noutputs, low, high,
+                        ob, ac, filename, seed, nrobots, heterogeneous, test)
         self.done = done
-            
+
     # === Rollouts/training ===
     def rollout(self, ntrials, render=False, timestep_limit=None, seed=None, post_eval=False):
         rews = 0.0
@@ -422,7 +459,8 @@ class ErPolicy(Policy):
             self.nn.seed(seed)
         # initialize the render for showing the behavior of the robot/s and the activation of the neurons
         if (self.test > 0):
-            self.objs = np.arange(1000, dtype=np.float64) # the environment can contain up to 100 objects to be displayed  
+            # the environment can contain up to 100 objects to be displayed
+            self.objs = np.arange(1000, dtype=np.float64)
             self.objs[0] = -1
             self.env.copyDobj(self.objs)
             import renderWorld
@@ -451,8 +489,10 @@ class ErPolicy(Policy):
                 # Render
                 if (self.test > 0):
                     self.env.render()
-                    info = 'Trial %d Step %d Fit %.2f %.2f' % (trial, t, rew, rews)
-                    renderWorld.update(self.objs, info, self.ob, self.ac, self.nact)
+                    info = 'Trial %d Step %d Fit %.2f %.2f' % (
+                        trial, t, rew, rews)
+                    renderWorld.update(
+                        self.objs, info, self.ob, self.ac, self.nact)
                 if self.done:
                     break
             if (self.test > 0):
@@ -466,6 +506,6 @@ class ErPolicy(Policy):
         # Normalize reward by the number of trials
         rews /= ntrials
         if (self.test > 0 and ntrials > 1):
-            print("Average Fit %.2f Steps %.2f " % (rews, steps/float(ntrials)))
+            print("Average Fit %.2f Steps %.2f " %
+                  (rews, steps/float(ntrials)))
         return rews, steps
-        

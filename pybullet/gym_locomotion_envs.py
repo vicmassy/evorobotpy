@@ -167,15 +167,18 @@ class HopperBulletEnv(WalkerBaseBulletEnv):
     potential_old = self.potential
     self.potential = self.robot.calc_potential()
     progress = float(self.potential - potential_old)
-    reward = 0.0
-    if self.robot.behavior1 == 5.0 and self.robot.behavior2 == 0.0:
-      reward = progress
-    elif self.robot.behavior1 == 0.0 and self.robot.behavior2 == 5.0:
-      potential_up_old = self.potential_up
-      self.potential_up = state[0]/self.scene.dt
-      progress_up = float(abs(self.potential_up-potential_up_old))
-      reward = 2.0*progress_up-0.5*abs(progress)
 
+    potential_up_old = self.potential_up
+    self.potential_up = state[0]/self.scene.dt
+    progress_up = float(abs(self.potential_up-potential_up_old))
+
+    beh1 = progress
+    beh2 = 2.0*progress_up-0.5*abs(progress)
+
+    if self.robot.behavior1 == 5.0 and self.robot.behavior2 == 0.0:
+      reward = beh1
+    else:
+      reward = beh2
 
     feet_collision_cost = 0.0
     for i, f in enumerate(
@@ -193,7 +196,7 @@ class HopperBulletEnv(WalkerBaseBulletEnv):
  
     self.HUD(state, a, done)
 
-    return state, reward, bool(done), {"reward" : reward}
+    return state, reward, bool(done), {"beh1" : beh1, "beh2" : beh2}
 
 
 class Walker2DBulletEnv(WalkerBaseBulletEnv):

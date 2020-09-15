@@ -54,6 +54,7 @@ class SSS(EvoAlgo):
         rg = np.random.RandomState(self.seed)  # create a random generator and initialize the seed
         pop = rg.randn(popsize, nparams)       # population
         fitness = zeros(popsize)               # fitness
+        fitness_beh = zeros((popsize, 3))
         self.stat = np.arange(0, dtype=np.float64) # initialize vector containing performance across generations
 
         assert ((popsize % 2) == 0), print("the size of the population should be odd")
@@ -80,8 +81,9 @@ class SSS(EvoAlgo):
             # Evaluate the population
             for i in range(popsize):                           
                 self.policy.set_trainable_flat(pop[i])        # set policy parameters
-                eval_rews, eval_length = self.policy.rollout(self.policy.ntrials, timestep_limit=1000)  # evaluate the individual
+                eval_rews, eval_length, rews1, rews2 = self.policy.rollout(self.policy.ntrials, timestep_limit=1000)  # evaluate the individual
                 fitness[i] = eval_rews                        # store fitness
+                fitness_beh[i] = np.array([i, rews1, rews2])
                 ceval += eval_length                          # Update the number of evaluations
                 self.updateBest(fitness[i], pop[i])           # Update data if the current offspring is better than current best
 
@@ -89,49 +91,72 @@ class SSS(EvoAlgo):
             bfit = fitness[index[0]]
             self.updateBest(bfit, pop[index[0]])              # eventually update the genotype/fitness of the best individual so far
 
+            # PARETO-FRONT
+            pareto_front_idx = np.empty(popsize, dtype=int)
+            front_len = []
+            halfpopsize = int(popsize/2)
+            dominated = fitness_beh.copy()
+            count = 0
+            while len(dominated) > 0:
+                #current_level = []
+                current_idx = []
+                for i in range(len(dominated)):
+                    res = ~(dominated[i] > dominated)
+                    res = np.delete(res, i, axis=0)
+                    if not (np.any(np.all(res, axis=1))):
+                        #current_level.append(dominated[i])
+                        pareto_front_idx[count] = dominated[i, 0]
+                        current_idx.append(i)
+                        count += 1
+                        # if len(pareto_front_idx) == halfpopsize:
+                        #    break
+                # print("Number of genotypes in the pareto-front: %.2f" %(len(current_idx)))
+                #pareto_front_idx.append(current_level)
+                front_len.append(len(current_idx))
+                dominated = np.delete(dominated, current_idx, axis=0)
+
             # Postevaluate the best individual
             self.env.seed(self.policy.get_seed + 100000)      # set the environmental seed, always the same for the same seed
             self.policy.nn.seed(self.policy.get_seed + 100000)# set the policy seed, always the same for the same seed
             self.policy.set_trainable_flat(pop[index[0]])     # set the parameters of the policy
-            eval_rews, eval_length = self.policy.rollout(self.policy.ntrials, timestep_limit=1000, post_eval=True)
+            eval_rews, eval_length, _, _ = self.policy.rollout(self.policy.ntrials, timestep_limit=1000, post_eval=True)
             bgfit = eval_rews
             ceval += eval_length
             self.updateBestg(bgfit, pop[index[0]])            # eventually update the genotype/fitness of the best post-evaluated individual
             
-            halfpopsize = int(popsize/2)
+            cross_prob = np.random.uniform(low=0.0, high=1.0, size=halfpopsize)
             for i in range(halfpopsize):
                 # crossover of the first parent and a randomly selected second parent among the best half population
-                if np.random.uniform(low=0.0, high=1.0) < self.crossoverrate:
-                    parent_1 = pop[index[i]]
-                    idx_p2 = np.random.choice(np.arange(0,halfpopsize, 1), size=2)
+                if cross_prob[i] < self.crossoverrate:
+                    parent_1 = pop[pareto_front_idx[i]]
+                    idx_p2 = np.random.choice(np.arange(0,halfpopsize, 1), size=2, replace=False)
                     if idx_p2[0] != i:
-                        parent_2 = pop[index[idx_p2[0]]]
+                        parent_2 = pop[pareto_front_idx[idx_p2[0]]]
                     else:
-                        parent_2 = pop[index[idx_p2[1]]]
-                    cutting_points = np.random.choice(np.arange(0, nparams, 1), size=2)
+                        parent_2 = pop[pareto_front_idx[idx_p2[1]]]
+                    cutting_points = np.random.choice(np.arange(0, nparams, 1), size=2, replace=False)
                     min_point = cutting_points.min()
                     max_point = cutting_points.max()
                     
                     # The section A and C of the first parent with the section B of the second parent  
                     if np.random.uniform(low=0.0, high=1.0) < 0.5:
-                        pop[index[i+halfpopsize], :min_point] = parent_1[:min_point]
-                        pop[index[i+halfpopsize], min_point:max_point] = parent_2[min_point:max_point]
-                        pop[index[i+halfpopsize], max_point:] = parent_1[max_point:]
+                        pop[pareto_front_idx[i+halfpopsize], :min_point] = parent_1[:min_point]
+                        pop[pareto_front_idx[i+halfpopsize], min_point:max_point] = parent_2[min_point:max_point]
+                        pop[pareto_front_idx[i+halfpopsize], max_point:] = parent_1[max_point:]
                     # The section A and C of the second parent with the section B of the first parent
                     else:
-                        pop[index[i+halfpopsize], :min_point] = parent_2[:min_point]
-                        pop[index[i+halfpopsize], min_point:max_point] = parent_1[min_point:max_point]
-                        pop[index[i+halfpopsize], max_point:] = parent_2[max_point:]
+                        pop[pareto_front_idx[i+halfpopsize], :min_point] = parent_2[:min_point]
+                        pop[pareto_front_idx[i+halfpopsize], min_point:max_point] = parent_1[min_point:max_point]
+                        pop[pareto_front_idx[i+halfpopsize], max_point:] = parent_2[max_point:]
                         
-                    pop[index[i+halfpopsize]] += (rg.randn(nparams) * self.noiseStdDev)
+                    pop[pareto_front_idx[i+halfpopsize]] += (rg.randn(nparams) * self.noiseStdDev)
 
-                # replace the worst half of the population with a mutated copy of the first half of the population
                 else:
-                    pop[index[i+halfpopsize]] = pop[index[i]] + (rg.randn(1, nparams) * self.noiseStdDev)
+                    pop[pareto_front_idx[i+halfpopsize]] = pop[pareto_front_idx[i]] + (rg.randn(1, nparams) * self.noiseStdDev)
 
             # display info
-            print('Seed %d (%.1f%%) gen %d msteps %d bestfit %.2f bestgfit %.2f cbestfit %.2f cbestgfit %.2f avgfit %.2f weightsize %.2f' %
-                      (self.seed, ceval / float(maxsteps) * 100, cgen, ceval / 1000000, self.bestfit, self.bestgfit, bfit, bgfit, np.average(fitness), np.average(np.absolute(pop[index[0]]))))
+            print('Seed %d (%.1f%%) gen %d msteps %d bestfit %.2f bestgfit %.2f cbestfit %.2f cbestgfit %.2f avgfit %.2f weightsize %.2f paretofront %.2f' %
+                      (self.seed, ceval / float(maxsteps) * 100, cgen, ceval / 1000000, self.bestfit, self.bestgfit, bfit, bgfit, np.average(fitness), np.average(np.absolute(pop[index[0]])), front_len[0]))
 
             # store data throughout generations
             self.stat = np.append(self.stat, [ceval, self.bestfit, self.bestgfit, bfit, bgfit, np.average(fitness)])
