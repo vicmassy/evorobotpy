@@ -232,7 +232,7 @@ class BulletPolicy(Policy):
                     self.env.robot.behavior2 = 0.0
                 else:
                     self.env.robot.behavior1 = 0.0
-                    self.env.robot.behavior2 = 5.0
+                    self.env.robot.behavior2 = 5.0'''
             self.ob = self.env.reset()
             # Reset network
             self.nn.resetNet()
